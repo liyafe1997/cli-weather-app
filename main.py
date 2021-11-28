@@ -14,7 +14,29 @@ def DownloadCityData(url):
     return city_data
 
 
-def ShowCityData(stdscr, selected_city):
+def ShowCurrentWeather(stdscr, selected_city):
+    stdscr.erase()
+    stdscr.refresh()
+    #print(selected_city)
+    stdscr.addstr(selected_city["name"] + " Current Weather:\n")
+    json_data = json.loads(requests.get("https://api.openweathermap.org/data/2.5/weather?id=" + str(selected_city["id"]) + "&appid=93c4fc843f2189f3232b27952027013b&units=metric").content)
+    temp_min = str(int(float(json_data["main"]["temp_min"])))
+    temp_max = str(int(float(json_data["main"]["temp_max"])))
+    humidity = str(int(float(json_data["main"]["humidity"])))
+    weather = ""
+    for j in json_data["weather"]:
+        if (weather != ""):
+            weather = weather + " and "
+        weather += j["main"]
+    try:
+        stdscr.addstr("  " + weather + ", " + temp_min + "℃  to " + temp_max + "℃ ," + "  Humidity:" + humidity + "%")
+        stdscr.addstr("\n")
+    except:
+        pass
+    c = stdscr.getch()
+
+
+def ShowForecast(stdscr, selected_city):
     stdscr.erase()
     stdscr.refresh()
     #print(selected_city)
@@ -39,11 +61,11 @@ def ShowCityData(stdscr, selected_city):
     c = stdscr.getch()
     stdscr.leaveok(True)
     while True:
-        if  c == curses.KEY_DOWN:
-            stdscr.move(0,0)
+        if c == curses.KEY_DOWN:
+            stdscr.move(0, 0)
             #stdscr.refresh()
         elif c == curses.KEY_UP:
-            stdscr.move(10,5)
+            stdscr.move(10, 5)
             #stdscr.refresh()
     stdscr.clear()
     stdscr.refresh()
@@ -52,8 +74,8 @@ def ShowCityData(stdscr, selected_city):
 def SearchingMenu(stdscr, city_data):
     curses.use_default_colors()
     stdscr.scrollok(True)
-    stdscr.idlok(True)
-    stdscr.keypad(True)
+    #stdscr.idlok(True)
+    #stdscr.keypad(True)
     input_string = ""
     input_string_before_cursor = ""
     input_string_after_cursor = ""
@@ -65,9 +87,15 @@ def SearchingMenu(stdscr, city_data):
         city_list_count = 0
         too_many_result_flag = 0
         stdscr.erase()
+
+        # Pages
+        max_x, max_y = stdscr.getmaxyx()
+        stdscr.addstr("max_x=" + str(max_x) + " max_y=" + str(max_y) + "\n")
+        
+        # Search
         stdscr.addstr("Search for City: " + input_string_before_cursor + "_" + input_string_after_cursor)
         stdscr.addstr("\n")
-        stdscr.addstr("InputKey:" + str(c) + "\n")
+        #stdscr.addstr("InputKey:" + str(c) + "\n")
         input_string = input_string_before_cursor + input_string_after_cursor
         if (input_string != ""):
             stdscr.addstr("City List:\n")
@@ -95,8 +123,10 @@ def SearchingMenu(stdscr, city_data):
         c = stdscr.getch()
         if ((c >= 33 and c <= 126) or (c >= 128 and c <= 254)):
             input_string_before_cursor += chr(c)
+            selected_index = 0
         elif (c == curses.KEY_BACKSPACE or c == 127):
             input_string_before_cursor = input_string_before_cursor[:-1]
+            selected_index = 0
         elif (c == 330):
             input_string_after_cursor = input_string_after_cursor[1:]
         elif (c == curses.KEY_UP and selected_index > 0):
@@ -115,14 +145,14 @@ def SearchingMenu(stdscr, city_data):
             pass
         elif (c == curses.KEY_ENTER or c == 10):
             print(selected_city)
-            ShowCityData(stdscr, selected_city)
+            ShowCurrentWeather(stdscr, selected_city)
         stdscr.addstr(input_string, curses.A_UNDERLINE)
 
     stdscr.getch()
 
 
 if __name__ == "__main__":
-    city_data = DownloadCityData("http://bulk.openweathermap.org/sample/city.list.json.gz")
-
+    #city_data = DownloadCityData("http://bulk.openweathermap.org/sample/city.list.json.gz")
+    city_data = DownloadCityData("http://127.0.0.1:8000/city.list.json.gz")
     selected_city = curses.wrapper(SearchingMenu, city_data)
     pass
