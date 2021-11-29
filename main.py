@@ -1,25 +1,31 @@
 import gzip
 import json
-from select import select
 import requests
 from datetime import datetime
-import time
 import curses
 
 
 def DownloadCityData(url):
     print("Fetching City Data...")
-    city_data = json.loads(gzip.decompress(requests.get(url).content))
-    print("City data loaded.")
+    try:
+        city_data = json.loads(gzip.decompress(requests.get(url).content))
+        print("City data loaded.")
+    except:
+        print("Fetch City Data Failed! Please check your internet connection.")
+        exit(-1)
     return city_data
 
 
 def ShowCurrentWeather(stdscr, selected_city):
     stdscr.erase()
-    stdscr.refresh()
-    # print(selected_city)
+    try:
+        stdscr.addstr("Loading data from server....\n")
+        json_data = json.loads(requests.get("https://api.openweathermap.org/data/2.5/weather?id=" + str(selected_city["id"]) + "&appid=93c4fc843f2189f3232b27952027013b&units=metric").content)
+    except:
+        stdscr.addstr("Load data failed! Unable to connect to server.\nPress any key to back to menu.")
+        stdscr.getch()
+        return
 
-    json_data = json.loads(requests.get("https://api.openweathermap.org/data/2.5/weather?id=" + str(selected_city["id"]) + "&appid=93c4fc843f2189f3232b27952027013b&units=metric").content)
     temp_min = str(int(float(json_data["main"]["temp_min"])))
     temp_max = str(int(float(json_data["main"]["temp_max"])))
     humidity = str(int(float(json_data["main"]["humidity"])))
@@ -89,13 +95,22 @@ def ShowCurrentWeather(stdscr, selected_city):
                 pass
             if (selected_index == 2):
                 return
+        elif (c == 27):
+            return
 
 
 def ShowAirPullution(stdscr, selected_city):
-    # print(selected_city)
-    json_data = json.loads(
-        requests.get("https://api.openweathermap.org/data/2.5/air_pollution?lat=" + str(selected_city["coord"]["lat"]) + "&lon=" + str(selected_city["coord"]["lon"]) +
-                     "&appid=93c4fc843f2189f3232b27952027013b&units=metric").content)
+    stdscr.erase()
+    try:
+        stdscr.addstr("Loading data from server....\n")
+        json_data = json.loads(
+            requests.get("https://api.openweathermap.org/data/2.5/air_pollution?lat=" + str(selected_city["coord"]["lat"]) + "&lon=" + str(selected_city["coord"]["lon"]) +
+                         "&appid=93c4fc843f2189f3232b27952027013b&units=metric").content)
+    except:
+        stdscr.addstr("Load data failed! Unable to connect to server.\nPress any key to back to menu.")
+        stdscr.getch()
+        return
+
     info_list = []
     for i in json_data["list"]:
         date = datetime.fromtimestamp(i["dt"]).strftime("%Y-%m-%d %H:%M")
@@ -137,7 +152,7 @@ def ShowAirPullution(stdscr, selected_city):
         #Display info string
         try:
             stdscr.addstr("[" + selected_city["name"] + "] Air Pullution Info:\n")
-            stdscr.addstr("Page " + str(current_page + 1) + "/" + str(pages + 1) + ". Press ↑ / ↓ key for switch page, Enter for return to menu.\n")
+            stdscr.addstr("Page " + str(current_page + 1) + "/" + str(pages + 1) + ". Press ↑ / ↓ key for switch page, Enter or ESC for return to menu.\n")
         except:
             pass
 
@@ -163,13 +178,19 @@ def ShowAirPullution(stdscr, selected_city):
             # switch page
             if (current_page + 1 <= pages):
                 current_page += 1
-        elif (c == curses.KEY_ENTER or c == 10):
+        elif (c == curses.KEY_ENTER or c == 10 or C == 27):
             return
 
 
 def ShowForecast(stdscr, selected_city):
-    # print(selected_city)
-    json_data = json.loads(requests.get("https://api.openweathermap.org/data/2.5/forecast?id=" + str(selected_city["id"]) + "&appid=93c4fc843f2189f3232b27952027013b&units=metric").content)
+    stdscr.erase()
+    try:
+        stdscr.addstr("Loading data from server....\n")
+        json_data = json.loads(requests.get("https://api.openweathermap.org/data/2.5/forecast?id=" + str(selected_city["id"]) + "&appid=93c4fc843f2189f3232b27952027013b&units=metric").content)
+    except:
+        stdscr.addstr("Load data failed! Unable to connect to server.\nPress any key to back to menu.")
+        stdscr.getch()
+        return
     info_list = []
     for i in json_data["list"]:
         date = datetime.fromtimestamp(i["dt"]).strftime("%Y-%m-%d %H:%M")
@@ -200,7 +221,7 @@ def ShowForecast(stdscr, selected_city):
         #Display info string
         try:
             stdscr.addstr("[" + selected_city["name"] + "] 5 days forecast:\n")
-            stdscr.addstr("Page " + str(current_page + 1) + "/" + str(pages + 1) + ". Press ↑ / ↓ key for switch page, Enter for return to menu.\n")
+            stdscr.addstr("Page " + str(current_page + 1) + "/" + str(pages + 1) + ". Press ↑ / ↓ key for switch page, Enter or ESC for return to menu.\n")
         except:
             pass
 
@@ -217,6 +238,7 @@ def ShowForecast(stdscr, selected_city):
                         stdscr.addstr("  " + info_list[i] + "\n")
                     except:
                         pass
+        #Deal with key press
         c = stdscr.getch()
         if (c == curses.KEY_UP):
             # switch page
@@ -226,33 +248,30 @@ def ShowForecast(stdscr, selected_city):
             # switch page
             if (current_page + 1 <= pages):
                 current_page += 1
-        elif (c == curses.KEY_ENTER or c == 10):
+        elif (c == curses.KEY_ENTER or c == 10 or c == 27):
             return
 
 
 def SearchingMenu(stdscr, city_data):
     curses.use_default_colors()
     stdscr.scrollok(True)
-    # stdscr.idlok(True)
-    # stdscr.keypad(True)
+
+    #input string init
     input_string = ""
     input_string_before_cursor = ""
     input_string_after_cursor = ""
-    c = 0
     selected_city = []
 
     # menu parameters
     selected_index = 0
     current_page = 0
     max_x, max_y = stdscr.getmaxyx()
-
     while True:
         city_list = []
         city_list_count = 0
         too_many_result_flag = 0
         stdscr.erase()
 
-        #stdscr.addstr("max_x=" + str(max_x) + " max_y=" + str(max_y) + "\n")
         # Search
         stdscr.addstr("Search for City: " + input_string_before_cursor + "_" + input_string_after_cursor)
         stdscr.addstr("\n")
@@ -287,8 +306,10 @@ def SearchingMenu(stdscr, city_data):
             #display menu
             if (len(city_list) != 0):
                 for i in range(0, len(city_list)):
+                    #only display current page
                     if (int(i / max_lines) == current_page):
                         try:
+                            #Display each menu item
                             if (selected_index == i):
                                 stdscr.addstr("  [->]")
                                 selected_city = city_list[i]
@@ -297,7 +318,7 @@ def SearchingMenu(stdscr, city_data):
                             stdscr.addstr(str(i + 1) + "." + city_list[i]["name"] + "\n")
                         except:
                             pass
-
+        #Deal with key press
         c = stdscr.getch()
         if ((c >= 33 and c <= 126) or (c >= 128 and c <= 254)):
             input_string_before_cursor += chr(c)
@@ -309,6 +330,7 @@ def SearchingMenu(stdscr, city_data):
             input_string_after_cursor = input_string_after_cursor[1:]
         elif (c == curses.KEY_UP and selected_index > 0):
             # switch page
+            #If the first item be selected on current page will switch to last page
             if ((selected_index + 1) % max_lines == 1):
                 if (current_page > 0):
                     current_page -= 1
@@ -316,6 +338,7 @@ def SearchingMenu(stdscr, city_data):
         elif (c == curses.KEY_DOWN and selected_index < len(city_list) - 1):
             selected_index += 1
             # switch page
+            #If the last item be selected on current page will switch to next page
             if (selected_index % max_lines == 0):
                 current_page += 1
 
@@ -330,9 +353,10 @@ def SearchingMenu(stdscr, city_data):
                     input_string_after_cursor
                 input_string_before_cursor = input_string_before_cursor[:-1]
             pass
+        elif (c == 27):
+            exit()
         elif (c == curses.KEY_ENTER or c == 10):
             ShowCurrentWeather(stdscr, selected_city)
-            continue
 
 
 if __name__ == "__main__":
