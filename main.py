@@ -178,7 +178,7 @@ def ShowAirPullution(stdscr, selected_city):
             # switch page
             if (current_page + 1 <= pages):
                 current_page += 1
-        elif (c == curses.KEY_ENTER or c == 10 or C == 27):
+        elif (c == curses.KEY_ENTER or c == 10 or c == 27):
             return
 
 
