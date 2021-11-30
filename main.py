@@ -362,5 +362,5 @@ def SearchingMenu(stdscr, city_data):
 if __name__ == "__main__":
     city_data = DownloadCityData("http://bulk.openweathermap.org/sample/city.list.json.gz")
     #city_data = DownloadCityData("http://127.0.0.1:8000/city.list.json.gz")
-    selected_city = curses.wrapper(SearchingMenu, city_data)
+    curses.wrapper(SearchingMenu, city_data)
     pass
