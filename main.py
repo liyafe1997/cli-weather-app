@@ -323,7 +323,7 @@ def SearchingMenu(stdscr, city_data):
         if ((c >= 33 and c <= 126) or (c >= 128 and c <= 254)):
             input_string_before_cursor += chr(c)
             selected_index = 0
-        elif (c == curses.KEY_BACKSPACE or c == 127):
+        elif (c == curses.KEY_BACKSPACE or c == 127 or c == 8):
             input_string_before_cursor = input_string_before_cursor[:-1]
             selected_index = 0
         elif (c == 330):

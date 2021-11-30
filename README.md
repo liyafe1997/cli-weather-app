@@ -12,6 +12,10 @@ If you are using conda python environment
 
 ```conda install requests```
 
+If you are using Windows, you have to install the windows-curses package
+
+```pip install windows-curses```
+
 And then
 
 ```python3 main.py```
